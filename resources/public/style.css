@@ -1,0 +1,49 @@
+.CardContent {
+  border: thin;
+  border-style: solid;
+  background-color: #EEEEEE;
+  type: block;
+  margin: 5px;
+}
+
+.CardList, .Card {
+  width: 250;
+}
+
+.Card h3 {
+  margin-top: 0px;
+  background-color: #AAFF00;
+  padding-top: 2px;
+}
+
+.Card h3, .Card p {
+  padding-left: 5px;
+}
+
+.MovedCard {
+  opacity: 0.4;
+}
+
+.Board > div {
+  float: left;
+  border: thin;
+  border-style: solid;
+}
+
+.Column > h2 {
+  text-align: center;
+}
+
+.Column {
+  margin-right: 1px;
+}
+
+.CardList {
+  min-height: 200;
+}
+
+/* floating cart */
+body > .Card {
+  background-color: red;
+  position: absolute;
+}
