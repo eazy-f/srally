@@ -109,9 +109,30 @@
       (gdom/removeChildren card-list)
       (doseq [card cards] (gdom/appendChild card-list card)))))
 
+(defn group-score
+  [layout group]
+  "calculates maximum distance in rows between cards from one group"
+  (transduce
+   (comp
+    (mapcat
+     (fn [[column-id cards]]
+       (map vector (range 0 (count cards)) cards)))
+    (filter #(get group (second %)))
+    (map first))
+   (fn
+     ([[min-pos max-pos]] (- max-pos min-pos))
+     ([[min-pos max-pos] position]
+        [(min min-pos position) (max max-pos position)]))
+   [(reduce max (map #(count (second %)) layout)) 0]
+   layout))
+
 (defn get-layout-score
-  [layout]
-  0)
+  [layout card-deps]
+  (reduce
+   (fn [score group]
+     (+ score (group-score layout group)))
+   0
+   card-deps))
 
 (defn better-score
   [left right]
@@ -197,31 +218,29 @@
      (fn [[ungrouped grouped]]
        [column-id
         (reduce into []
-                (into
+                (concat
                  (interleave ungrouped grouped)
                  (drop (count grouped) ungrouped)))])
      (cartesian-product [ungrouped-slices grouped-permutations]))))
 
 (defn layout-permuations
-  [layout]
-  (let [groups (get-card-deps)
-        columns-permutations (map (partial column-permutations groups) layout)]
-    (map
-     (partial into {})
-     (cartesian-product columns-permutations))))
+  [layout card-deps]
+  (->> (map (partial column-permutations card-deps) layout)
+       cartesian-product
+       (map (partial into {}))))
 
 (defn optimize-layout
-  [layout]
-  (let [permutations (layout-permuations layout)]
+  [layout card-deps]
+  (let [permutations (layout-permuations layout card-deps)]
     (transduce
-     (map (fn [layout] [(get-layout-score layout) layout]))
+     (map (fn [layout] [(get-layout-score layout card-deps) layout]))
      (fn
        ([final]
           (second final))
        ([best current]
           (if best
             (let [[best-score _] best
-                  [current-score _] current]
+                  [current-score l] current]
               (if (better-score current-score best-score)
                 current
                 best))
@@ -231,7 +250,8 @@
 
 (defn handle-layout-change
   [layout]
-  (-> (optimize-layout layout)
+  (.log js/console "layout changed")
+  (-> (optimize-layout layout (get-card-deps))
       apply-layout))
 
 (defn listen-drag
@@ -248,7 +268,6 @@
 
 (defn load
   []
-  ;(.log js/console (.getOwnPropertyDescriptor js/Object js/document "location"))
   (let [groups (create-groups (get-column-list))
         drag-group (new gfx/DragListGroup)]
     (.setDraggerElClass drag-group "Card")
@@ -258,6 +277,4 @@
            (.addDragList drag-group list goog.fx.DragListDirection/DOWN))
     (doseq [card (get-cards)] (add-card card))
     (.init drag-group)
-    (.log js/console (print-str (cartesian-product [[:a :b] [1 2]])))
-    (.log js/console "done")
     (listen-drag drag-group (get-cards-layout))))
