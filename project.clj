@@ -10,5 +10,6 @@
     :builds [
       {:source-paths ["src-cljs"]
        :compiler {
-;           :output-to "resources/public/srally.js"
-           :output-dir "resources/public/"}}]})
+           :output-to "resources/public/srally.js"
+           :optimizations :whitespace
+           :pretty-print true}}]})
